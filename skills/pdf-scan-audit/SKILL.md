@@ -86,6 +86,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/extract_pages.py "$P
 - 의심 페이지 시각 재검증 결과
 - 종합 진단표
 - 권장 사항
+- **수정 명령 예시** (의심 페이지·결함이 발견된 경우에만) — `pdf-toolkit` plugin의 슬래시 명령(`/pdf-rotate`, `/pdf-delete`, `/pdf-reorder`, `/pdf-extract`, `/pdf-meta`)을 페이지 번호까지 채워서 사용자가 바로 복사·실행 가능한 형태로 제시
 
 ### 9. 정리
 ```bash
