@@ -1,6 +1,6 @@
 ---
 name: pdf-scan-audit
-description: Use this skill when the user wants to inspect, audit, verify or check scanned PDF books for quality issues. Triggers when user asks about PDF page integrity, scan errors, missing/duplicated/misordered pages, rotated pages, cropped content, OCR quality, page number continuity, or wants a quality report on a scanned PDF. Trigger phrases include "PDF 검사", "스캔 검사", "페이지 누락", "스캔 품질", "audit PDF", "check scanned PDF". Works on scanned PDFs (primary) and digital PDFs (partial checks).
+description: Use this skill when the user wants to inspect, audit, verify or check scanned PDF books for quality issues — page integrity, scan errors, missing/duplicated/misordered pages, rotated pages, cropped or skewed content, OCR quality, page number continuity, page size consistency. Korean triggers (사용자가 한글로 요청하는 자연스러운 표현 포함) "PDF 검사", "PDF 검사해줘", "스캔 검사", "스캔 품질", "페이지 누락", "페이지 누락이나 회전", "스캐너로 스캔한", "스캐너로 스캔", "스캔한 PDF", "책 스캔 검사", "책 스캔 확인", "페이지 회전 잘못", "페이지 잘렸", "순서 안 맞", "순서가 맞나", "잘못된 페이지", "메타데이터만 말고", "메타데이터만 확인하지 말고", "정확하고 자세하게 검사", "스캔본 검사", "스캔본 확인", "PDF 점검". English triggers "audit PDF", "audit scanned PDF", "check scanned PDF", "scan quality", "page integrity", "missing pages", "rotated page", "cropped page", "PDF quality report". Works on scanned PDFs (primary) and digital PDFs (partial checks).
 ---
 
 # PDF Scan Audit
