@@ -5,7 +5,7 @@ description: Use this skill when the user wants to inspect, audit, verify or che
 
 # PDF Scan Audit
 
-스캔 PDF의 품질을 정밀 진단합니다. 612페이지짜리 책도 5분 내에 메타·콘텐츠·페이지번호 연속성을 검사하고, 의심 페이지만 골라 시각 검증한 뒤 표로 보고합니다.
+스캔 PDF의 품질을 정밀 진단합니다. 수백 페이지짜리 책도 몇 분 내에 메타·콘텐츠·페이지번호 연속성을 검사하고, 의심 페이지만 골라 시각 검증한 뒤 표로 보고합니다.
 
 ## 적용 대상
 
