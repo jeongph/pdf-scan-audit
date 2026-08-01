@@ -1,18 +1,28 @@
 name: Auto release
 
-# plugin.json 의 version 이 바뀌면 그 버전으로 태그와 GitHub Release 를 만든다.
+# 커밋 타입에서 다음 버전을 정해 plugin.json 을 올리고, 태그와 Release 를 만든다.
 #
-# 마켓플레이스는 version 이 설정돼 있으면 그 문자열로 플러그인을 핀한다.
-# 즉 version 을 올리는 것이 곧 릴리스이므로, 그 시점을 태그·Release 로 남겨
-# 레포에서 현재 버전을 바로 확인할 수 있게 한다.
+# 마켓플레이스는 plugin.json 의 version 이 있으면 그 문자열로 플러그인을 핀한다.
+# version 을 올리지 않으면 새 커밋을 아무리 push 해도 기존 사용자에게 전달되지
+# 않으므로, 그 범프를 사람 손에 맡기지 않고 커밋 컨벤션에서 자동으로 끌어낸다.
+#
+# 판정 규칙은 .github/scripts/next-version.sh 에 있고 같은 폴더의 테스트가
+# 지킨다. 릴리스 전에 그 테스트를 먼저 돌린다.
+#
+# 봇이 만드는 "chore(release): x.y.z" 커밋은 GITHUB_TOKEN 으로 push 되므로
+# 워크플로우를 다시 트리거하지 않는다. 설령 트리거되더라도 chore 는 릴리스
+# 대상이 아니라 그대로 멈춘다.
 on:
   push:
     branches: [main]
-    paths: ['.claude-plugin/plugin.json']
-  workflow_dispatch:   # 기존 버전으로 초기 Release 를 만들 때 수동 실행
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: auto-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -20,36 +30,67 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          fetch-depth: 0   # --generate-notes 와 태그 조회에 전체 히스토리가 필요하다
+          fetch-depth: 0   # 직전 태그부터의 커밋과 --generate-notes 에 전체 이력이 필요하다
 
-      - name: Resolve version
+      - name: Test version resolver
+        run: bash .github/scripts/next-version.test.sh
+
+      - name: Resolve next version
         id: v
         run: |
-          VERSION=$(jq -r '.version // empty' .claude-plugin/plugin.json)
-          if [ -z "$VERSION" ]; then
+          CURRENT=$(jq -r '.version // empty' .claude-plugin/plugin.json)
+          if [ -z "$CURRENT" ]; then
             echo "plugin.json 에 version 이 없다 — 건너뛴다"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "release=false" >> "$GITHUB_OUTPUT"
             exit 0
-          fi
-          # version 은 파일에서 읽은 값이므로 셸에 넘기기 전에 형태를 확인한다.
-          if ! printf '%s' "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)*$'; then
-            echo "version 이 semver 형식이 아니다: $VERSION — 건너뛴다"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
-            echo "v$VERSION 태그가 이미 있다 — 건너뛴다"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "v$VERSION 릴리스를 만든다"
-            echo "skip=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create tag and release
-        if: steps.v.outputs.skip == 'false'
+          # 직전 릴리스 지점은 현재 버전의 태그다. 아직 없으면 전체 이력을 본다.
+          if git rev-parse "v$CURRENT" >/dev/null 2>&1; then
+            RANGE="v$CURRENT..HEAD"
+          else
+            RANGE="HEAD"
+          fi
+          echo "대상 범위: $RANGE (현재 $CURRENT)"
+
+          set +e
+          NEXT=$(git log --format=%B%x00 "$RANGE" | bash .github/scripts/next-version.sh "$CURRENT")
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 10 ]; then
+            echo "릴리스할 변경이 없다 (docs·chore·ci 등만 쌓임) — 건너뛴다"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$rc" -ne 0 ] || [ -z "$NEXT" ]; then
+            echo "버전 계산 실패 (exit $rc)" >&2
+            exit 1
+          fi
+          if git rev-parse "v$NEXT" >/dev/null 2>&1; then
+            echo "v$NEXT 태그가 이미 있다 — 건너뛴다"
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "$CURRENT -> $NEXT"
+          echo "next=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "release=true" >> "$GITHUB_OUTPUT"
+
+      - name: Bump, tag and release
+        if: steps.v.outputs.release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.v.outputs.version }}
+          NEXT: ${{ steps.v.outputs.next }}
         run: |
-          gh release create "v$VERSION" --title "v$VERSION" --generate-notes
+          # jq 로 다시 쓰면 파일 전체가 재포맷되므로 version 값만 바꾼다.
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$NEXT\"/" .claude-plugin/plugin.json
+          test "$(jq -r .version .claude-plugin/plugin.json)" = "$NEXT"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/plugin.json
+          git commit -m "chore(release): $NEXT"
+          git push
+
+          gh release create "v$NEXT" --title "v$NEXT" --generate-notes
