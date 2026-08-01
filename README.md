@@ -1,5 +1,8 @@
 # pdf-scan-audit
 
+[![version](https://img.shields.io/github/v/release/jeongph/pdf-scan-audit?label=version&color=blue)](https://github.com/jeongph/pdf-scan-audit/releases)
+[![license](https://img.shields.io/github/license/jeongph/pdf-scan-audit?color=lightgrey)](LICENSE)
+
 > 스캔 PDF 품질 정밀 진단 — 페이지 누락·순서·회전·잘림·해상도 결함을 자동 검출하고 표로 보고합니다.
 
 스캐너로 읽은 책이 한 권 들어왔을 때, 메타데이터만 훑지 말고 회전 의심·페이지번호 연속성·이미지 잘림까지 정밀하게 검사하는 Claude Code 플러그인입니다. 수백 페이지짜리 책도 몇 분 안에 진단하고, 의심 페이지만 골라 시각 검증한 뒤 가독성 좋은 표로 보고합니다.
