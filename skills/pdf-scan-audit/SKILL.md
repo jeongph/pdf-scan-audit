@@ -5,33 +5,33 @@ description: Use this skill when the user wants to inspect, audit, verify or che
 
 # PDF Scan Audit
 
-스캔 PDF의 품질을 정밀 진단합니다. 수백 페이지짜리 책도 몇 분 내에 메타·콘텐츠·페이지번호 연속성을 검사하고, 의심 페이지만 골라 시각 검증한 뒤 표로 보고합니다.
+스캔 PDF의 품질을 정밀 진단합니다. 수백 페이지짜리 책도 몇 분 내에 메타, 콘텐츠, 페이지번호 연속성을 검사하고, 의심 페이지만 골라 시각 검증한 뒤 표로 보고합니다.
 
 ## 적용 대상
 
 - **메인 타겟**: 종이책을 스캐너로 읽은 PDF (Epson ScanSmart, ScanSnap, FineReader 등 출력)
-- **부분 적용**: 디지털 PDF — 회전·페이지 크기·페이지번호 연속성은 의미 있음. 빈 페이지·이미지 커버리지 등은 자동 스킵
+- **부분 적용**: 디지털 PDF. 회전, 페이지 크기, 페이지번호 연속성은 의미 있음. 빈 페이지, 이미지 커버리지 등은 자동 스킵
 
 ## 워크플로우
 
 ### 1. 입력 확인
 - 사용자가 지정한 PDF 경로(들)를 받는다. 다중 PDF 지원.
-- 인자가 없으면 작업 디렉토리의 `*.pdf` 모두 후보로 보고 사용자에게 확인
+- 인자가 없으면 작업 디렉토리의 `*.pdf`를 모두 후보로 보고 사용자에게 확인
 
 ### 2. 의존성 점검
 ```bash
 python3 -c "import fitz" 2>&1
 ```
 - `ModuleNotFoundError`면 `pip install pymupdf` 안내 후 중단
-- 사용자가 설치를 거부하면 진행 불가 → 그대로 보고
+- 사용자가 설치를 거부하면 진행할 수 없으므로 그대로 보고
 
 ### 3. 임시 작업 디렉토리 생성
 ```bash
 WORKDIR=$(mktemp -d -t pdf-scan-audit-XXXXXX)
 echo "WORKDIR=$WORKDIR"
 ```
-- 모든 중간 산출물(JSON 결과·PNG)은 이 디렉토리에 저장
-- 작업 디렉토리(사용자 cwd)에는 **아무 것도 남기지 않음**
+- 모든 중간 산출물(JSON 결과와 PNG)은 이 디렉토리에 저장
+- 작업 디렉토리(사용자 cwd)에는 **아무것도 남기지 않음**
 
 ### 4. 메타 검사 (`inspect_meta.py`)
 ```bash
@@ -39,7 +39,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/inspect_meta.py "$PD
 ```
 다음을 수집:
 - 총 페이지 수, 페이지 크기 분포, 회전 메타(/Rotate), 방향(portrait/landscape)
-- 빈 페이지·이미지 없는 페이지·텍스트 없는 페이지
+- 빈 페이지, 이미지 없는 페이지, 텍스트 없는 페이지
 - DPI 추정(가장 큰 임베디드 이미지 기준)
 
 ### 5. 콘텐츠 검사 (`inspect_content.py`)
@@ -50,7 +50,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/inspect_content.py "
 - 회전 의심 페이지(텍스트 줄 종횡비로 추정)
 - 이미지가 페이지 경계 밖으로 잘리는 페이지
 - 페이지 안에서 이미지 커버리지 비율
-- 텍스트 거의 없는 페이지(스캔본인데 OCR 실패 신호)
+- 텍스트가 거의 없는 페이지(스캔본인데 OCR 실패 신호)
 
 ### 6. 페이지번호 연속성 (`pagenum_check.py`)
 ```bash
@@ -58,7 +58,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/pagenum_check.py "$P
 ```
 - 헤더/푸터 영역(상하단 10%)에서 숫자만 있는 줄을 페이지번호 후보로 추출
 - 동적 추적으로 가장 그럴듯한 시퀀스 선택
-- 갭이 큰(>50) 또는 음수인 갭은 **OCR 오인식**으로 자동 분류
+- 갭이 크거나(>50) 음수이면 **OCR 오인식**으로 자동 분류
 - 갭이 1~5 정도면 진짜 누락 후보로 보고
 
 ### 7. 의심 페이지 시각 검증 (`extract_pages.py`)
@@ -74,8 +74,8 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/extract_pages.py "$P
 ```
 
 `Read` 도구로 PNG를 직접 보고:
-- 회전 의심 페이지가 정말 회전됐는지 vs 책 디자인 의도(가로 일러스트)인지 판단
-- 헤더 영역에서 실제 페이지번호가 연속되는지 직접 눈으로 확인 → OCR 오인식 vs 진짜 누락 결정
+- 회전 의심 페이지가 정말 회전됐는지, 아니면 책 디자인 의도(가로 일러스트)인지 판단
+- 헤더 영역에서 실제 페이지번호가 연속되는지 직접 눈으로 확인해 OCR 오인식인지 진짜 누락인지 결정
 
 ### 8. 결과 보고
 `references/output-format.md`의 표 형식대로 마크다운 표로 출력. 다음 섹션 포함:
@@ -85,7 +85,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/pdf-scan-audit/scripts/extract_pages.py "$P
 - 책 구조 매핑(PDF ↔ 책 페이지)
 - 의심 페이지 시각 재검증 결과
 - 종합 진단표
-- 권장 사항(추상적 액션만, 특정 도구·명령은 권하지 않음)
+- 권장 사항(추상적 액션만, 특정 도구나 명령은 권하지 않음)
 
 ### 9. 정리
 ```bash
@@ -96,7 +96,7 @@ rm -rf "$WORKDIR"
 
 ## 해석 가이드
 
-OCR 오인식 vs 진짜 누락, 회전 의심 vs 디자인 의도 등 판정 기준은 `references/interpretation.md` 참조.
+OCR 오인식과 진짜 누락, 회전 의심과 디자인 의도 등을 가르는 판정 기준은 `references/interpretation.md` 참조.
 
 ## 출력 포맷
 
