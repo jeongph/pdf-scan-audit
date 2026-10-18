@@ -31,7 +31,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("pdf")
     ap.add_argument("out_dir")
-    ap.add_argument("--pages", required=True, help="쉼표·하이픈 (예: 1,5,10-12)")
+    ap.add_argument("--pages", required=True, help="쉼표와 하이픈으로 지정 (예: 1,5,10-12)")
     ap.add_argument("--mode", choices=["full", "header"], default="full")
     ap.add_argument("--dpi", type=int, default=None)
     args = ap.parse_args()

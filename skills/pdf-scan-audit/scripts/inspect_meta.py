@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""PDF 페이지 메타·크기·DPI·회전·빈페이지 검사."""
+"""PDF 페이지 메타, 크기, DPI, 회전, 빈 페이지 검사."""
 
 import json
 import os

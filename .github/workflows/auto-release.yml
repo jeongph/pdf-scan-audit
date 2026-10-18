@@ -1,7 +1,7 @@
 name: Auto release
 
-# 판정 규칙과 스크립트는 jeongph/claude-plugins 에 있다.
-# 규칙을 바꾸려면 그 레포의 .github/scripts/next-version.sh 를 고친다.
+# 판정 규칙과 스크립트는 jeongph/claude-plugins에 있다.
+# 규칙을 바꾸려면 그 레포의 .github/scripts/next-version.sh를 고친다.
 on:
   push:
     branches: [main]
